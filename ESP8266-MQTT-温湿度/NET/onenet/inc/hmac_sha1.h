@@ -6,7 +6,7 @@
 
 
 //
-#define MAX_MESSAGE_LENGTH		4096
+#define MAX_MESSAGE_LENGTH		1024
 
 
 void hmac_sha1(

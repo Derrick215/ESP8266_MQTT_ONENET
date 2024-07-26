@@ -34,13 +34,14 @@
 #include "LED.h"
 #include "Key.h"
 #include "OLED.h"
-
+//#include "Timer.h"
+#include "PWM.h"
 
 //C库
 #include <string.h>
 
 
-#define ESP8266_ONENET_INFO		"AT+CIPSTART=\"TCP\",\"183.230.40.96\",1883\r\n"
+#define ESP8266_ONENET_INFO		"AT+CIPSTART=\"TCP\",\"mqtts.heclouds.com\",1883\r\n"
 
 
 /*
@@ -72,7 +73,11 @@ void Hardware_Init(void)
 	Usart1_Init(115200);							//串口1，打印信息用
 	
 	Usart2_Init(115200);							//串口2，驱动ESP8266用
+
+//	PWM_Init(1000 - 1, 7200 - 1);
 	
+//	Timer_Init();
+//	
 //	IIC_Init();										//软件IIC初始化
 	
 	Beep_Init();									//蜂鸣器初始化
@@ -82,6 +87,7 @@ void Hardware_Init(void)
 }
 
 uint8_t Key_Num = 0;
+uint8_t humi, temp = 0;
 
 /*
 ************************************************************
@@ -106,43 +112,43 @@ int main(void)
 	Hardware_Init();				//初始化外围硬件
 	
 	ESP8266_Init();					//初始化ESP8266
-////	
-//	OneNET_RegisterDevice();
-//	
-//	UsartPrintf(USART_DEBUG, "Connect MQTTs Server...\r\n");
-//	while(ESP8266_SendCmd(ESP8266_ONENET_INFO, "CONNECT"))
-//		DelayXms(500);
-//	
-//	while(OneNet_DevLink())			//接入OneNET
-//		DelayXms(500);
+
+	UsartPrintf(USART_DEBUG, "Connect MQTT Server...\r\n");
+	while(ESP8266_SendCmd(ESP8266_ONENET_INFO, "CONNECT"))
+		DelayXms(500);
+	UsartPrintf(USART_DEBUG, "Connect MQTT Server successful\r\n");
+	
+	while(OneNet_DevLink())			//设备登陆
+		DelayXms(500);
 	
 	OLED_ShowString(1, 1, "OLED_Init!");
+//	
+	OneNET_Subscribe();
+	UsartPrintf(USART_DEBUG, "Subscribe successful\r\n");
 	
 	Beep_Set(BEEP_ON);				//鸣叫提示接入成功
-	LED1_ON();
-	LED2_ON();
+	LED1_Set(LED_ON);
 	DelayXms(250);
 	Beep_Set(BEEP_OFF);
-	LED1_OFF();
-	LED2_OFF();
+	LED1_Set(LED_OFF);
+	
+	
 	
 	while(1)
 	{
 		
-//		if(++timeCount >= 500)									//发送间隔5s
-//		{
-//			SHT20_GetValue();
-//			
+		if(++timeCount >= 40)									//发送间隔5s
+		{
 //			UsartPrintf(USART_DEBUG, "OneNet_SendData\r\n");
 //			OneNet_SendData();									//发送数据
-//			
-//			timeCount = 0;
-//			ESP8266_Clear();
-//		}
-//		
-//		dataPtr = ESP8266_GetIPD(0);
-//		if(dataPtr != NULL)
-//			OneNet_RevPro(dataPtr);
+			
+			timeCount = 0;
+			ESP8266_Clear();
+		}
+	
+		dataPtr = ESP8266_GetIPD(0);
+		if(dataPtr != NULL)
+			OneNet_RevPro(dataPtr);
 		
 		Key_Num = GetKeyNum();
 		
@@ -150,17 +156,21 @@ int main(void)
 		{
 			case 1:
 			{
-				LED1_TURN();
+				temp = 37;
+				humi = 50;
+//				Beep_Set(BEEP_ON);
+				LED1_Set(LED_OFF);
 				break;
 			}
-			
 			case 2:
 			{
-				LED2_TURN();
+				temp = 38;
+				humi = 60;
+//				Beep_Set(BEEP_OFF);
+				LED1_Set(LED_ON);
 				break;
 			}
 		}
-		
 		DelayXms(10);
 	
 	}

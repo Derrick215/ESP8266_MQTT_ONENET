@@ -36,7 +36,10 @@
 .\output\onenet.o: .\NET\onenet\inc\base64.h
 .\output\onenet.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stddef.h
 .\output\onenet.o: .\NET\onenet\inc\hmac_sha1.h
+.\output\onenet.o: .\NET\CJSON\cJSON.h
 .\output\onenet.o: .\hardware\inc\usart.h
 .\output\onenet.o: .\hardware\inc\delay.h
+.\output\onenet.o: .\hardware\inc\LED.h
+.\output\onenet.o: .\hardware\inc\beep.h
 .\output\onenet.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
 .\output\onenet.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h

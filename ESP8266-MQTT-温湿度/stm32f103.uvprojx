@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define>STM32F10X_MD, USE_STDPERIPH_DRIVER</Define>
               <Undefine></Undefine>
-              <IncludePath>.\core;.\fwlib\inc;.\hardware\inc;.\user;.\NET\onenet\inc;.\NET\MQTT;.\NET\device\inc</IncludePath>
+              <IncludePath>.\core;.\fwlib\inc;.\hardware\inc;.\user;.\NET\onenet\inc;.\NET\MQTT;.\NET\device\inc;.\NET\CJSON</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -428,6 +428,11 @@
               <FileType>1</FileType>
               <FilePath>.\fwlib\src\stm32f10x_usart.c</FilePath>
             </File>
+            <File>
+              <FileName>stm32f10x_tim.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\fwlib\src\stm32f10x_tim.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -462,6 +467,16 @@
               <FileName>OLED.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\hardware\src\OLED.c</FilePath>
+            </File>
+            <File>
+              <FileName>Timer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\hardware\src\Timer.c</FilePath>
+            </File>
+            <File>
+              <FileName>PWM.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\hardware\src\PWM.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -516,6 +531,21 @@
           </Files>
         </Group>
         <Group>
+          <GroupName>CJSON</GroupName>
+          <Files>
+            <File>
+              <FileName>cJSON.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\NET\CJSON\cJSON.c</FilePath>
+            </File>
+            <File>
+              <FileName>cJSON.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\NET\CJSON\cJSON.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
           <GroupName>::CMSIS</GroupName>
         </Group>
       </Groups>
@@ -534,5 +564,14 @@
     </components>
     <files/>
   </RTE>
+
+  <LayerInfo>
+    <Layers>
+      <Layer>
+        <LayName>stm32f103</LayName>
+        <LayPrjMark>1</LayPrjMark>
+      </Layer>
+    </Layers>
+  </LayerInfo>
 
 </Project>

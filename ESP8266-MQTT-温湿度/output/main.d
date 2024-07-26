@@ -36,4 +36,5 @@
 .\output\main.o: .\hardware\inc\LED.h
 .\output\main.o: .\hardware\inc\Key.h
 .\output\main.o: .\hardware\inc\OLED.h
+.\output\main.o: .\hardware\inc\PWM.h
 .\output\main.o: D:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h

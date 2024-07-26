@@ -32,10 +32,13 @@
 //算法
 #include "base64.h"
 #include "hmac_sha1.h"
+#include "cJSON.h"
 
 //硬件驱动
 #include "usart.h"
 #include "delay.h"
+#include "LED.h"
+#include "beep.h"
 
 
 //C库
@@ -43,11 +46,11 @@
 #include <stdio.h>
 
 
-#define PROID			""
+#define PROID			"89jP18n6AJ"
 
-#define ACCESS_KEY		""
+#define ACCESS_KEY		"WWt3aGJWZ3N5SkhSODNWNFJqQXNCWWpkcVRMZ1F6c1Q="
 
-#define DEVICE_NAME		""
+#define DEVICE_NAME		"d1"
 
 
 char devid[16];
@@ -330,7 +333,7 @@ _Bool OneNet_DevLink(void)
 	
 	_Bool status = 1;
 	
-	OneNET_Authorization("2018-10-31", PROID, 1956499200, key, DEVICE_NAME,
+	OneNET_Authorization("2018-10-31", PROID, 1956499200, ACCESS_KEY, DEVICE_NAME,
 								authorization_buf, sizeof(authorization_buf), 0);
 	
 	UsartPrintf(USART_DEBUG, "OneNET_DevLink\r\n"
@@ -369,7 +372,7 @@ _Bool OneNet_DevLink(void)
 	return status;
 	
 }
-
+extern uint8_t humi, temp;
 unsigned char OneNet_FillBuf(char *buf)
 {
 	
@@ -377,16 +380,23 @@ unsigned char OneNet_FillBuf(char *buf)
 	
 	memset(text, 0, sizeof(text));
 	
-	strcpy(buf, "{\"id\":123,\"dp\":{");
+	strcpy(buf, "{\"id\":\"123\",\"params\":{");
 	
 	memset(text, 0, sizeof(text));
-//	sprintf(text, "\"Tempreture\":[{\"v\":%f}],", sht20_info.tempreture);
+	sprintf(text, "\"LED\":{\"value\":%s},", LED_info.LED_Status ? "true": "false");
 	strcat(buf, text);
 	
 	memset(text, 0, sizeof(text));
-//	sprintf(text, "\"Humidity\":[{\"v\":%f}]", sht20_info.humidity);
+	sprintf(text, "\"bee\":{\"value\":%s},", beep_info.Beep_Status ?  "true": "false");
 	strcat(buf, text);
 	
+	memset(text, 0, sizeof(text));
+	sprintf(text, "\"temperture\":{\"value\":%d},", temp);
+	strcat(buf, text);
+	
+	memset(text, 0, sizeof(text));
+	sprintf(text, "\"humidity\":{\"value\":%d}", humi);
+	strcat(buf, text);
 	strcat(buf, "}}");
 	
 	return strlen(buf);
@@ -413,7 +423,7 @@ void OneNet_SendData(void)
 	
 	short body_len = 0, i = 0;
 	
-	UsartPrintf(USART_DEBUG, "Tips:	OneNet_SendData-MQTT\r\n");
+//	UsartPrintf(USART_DEBUG, "Tips:	OneNet_SendData-MQTT\r\n");
 	
 	memset(buf, 0, sizeof(buf));
 	
@@ -427,7 +437,7 @@ void OneNet_SendData(void)
 				mqttPacket._data[mqttPacket._len++] = buf[i];
 			
 			ESP8266_SendData(mqttPacket._data, mqttPacket._len);									//上传数据到平台
-			UsartPrintf(USART_DEBUG, "Send %d Bytes\r\n", mqttPacket._len);
+//			UsartPrintf(USART_DEBUG, "Send %d Bytes\r\n", mqttPacket._len);
 			
 			MQTT_DeleteBuffer(&mqttPacket);															//删包
 		}
@@ -484,7 +494,7 @@ void OneNET_Subscribe(void)
 	char topic_buf[56];
 	const char *topic = topic_buf;
 	
-	snprintf(topic_buf, sizeof(topic_buf), "$sys/%s/%s/cmd/#", PROID, DEVICE_NAME);
+	snprintf(topic_buf, sizeof(topic_buf), "$sys/%s/%s/thing/property/set", PROID, DEVICE_NAME);
 	
 	UsartPrintf(USART_DEBUG, "Subscribe Topic: %s\r\n", topic_buf);
 	
@@ -528,6 +538,11 @@ void OneNet_RevPro(unsigned char *cmd)
 	char numBuf[10];
 	int num = 0;
 	
+	cJSON * raw_json;
+	cJSON * params_json;
+	cJSON * LED_json;
+	cJSON * bee_json;
+	
 	type = MQTT_UnPacketRecv(cmd);
 	switch(type)
 	{
@@ -541,27 +556,41 @@ void OneNet_RevPro(unsigned char *cmd)
 				UsartPrintf(USART_DEBUG, "topic: %s, topic_len: %d, payload: %s, payload_len: %d\r\n",
 																	cmdid_topic, topic_len, req_payload, req_len);
 				
-				data_ptr = strstr(cmdid_topic, "request/");									//查找cmdid
-				if(data_ptr)
+				
+				raw_json = cJSON_Parse(req_payload);
+				params_json = cJSON_GetObjectItem(raw_json,"params");
+				LED_json = cJSON_GetObjectItem(params_json,"LED");
+				bee_json = cJSON_GetObjectItem(params_json,"bee");
+				if(LED_json != NULL)
 				{
-					char topic_buf[80], cmdid[40];
-					
-					data_ptr = strchr(data_ptr, '/');
-					data_ptr++;
-					
-					memcpy(cmdid, data_ptr, 36);											//复制cmdid
-					cmdid[36] = 0;
-					
-					snprintf(topic_buf, sizeof(topic_buf), "$sys/%s/%s/cmd/response/%s",
-															PROID, DEVICE_NAME, cmdid);
-					OneNET_Publish(topic_buf, "ojbk");										//回复命令
+					if(LED_json -> type == cJSON_True)
+					{
+						LED1_Set(LED_ON);
+					}						
+					else 
+					{
+						LED1_Set(LED_OFF);
+					}
 				}
+				if(bee_json != NULL)
+				{
+					if(bee_json -> type == cJSON_True)
+					{
+						Beep_Set(BEEP_ON);
+					}						
+					else 
+					{
+						Beep_Set(BEEP_OFF);
+					}
+				}
+
+				cJSON_Delete(raw_json);
 			}
 			
 		case MQTT_PKT_PUBACK:														//发送Publish消息，平台回复的Ack
 		
 			if(MQTT_UnPacketPublishAck(cmd) == 0)
-				UsartPrintf(USART_DEBUG, "Tips:	MQTT Publish Send OK\r\n");
+//				UsartPrintf(USART_DEBUG, "Tips:	MQTT Publish Send OK\r\n");
 			
 		break;
 		
@@ -584,20 +613,7 @@ void OneNet_RevPro(unsigned char *cmd)
 	if(result == -1)
 		return;
 	
-	dataPtr = strchr(req_payload, ':');					//搜索':'
-
-	if(dataPtr != NULL && result != -1)					//如果找到了
-	{
-		dataPtr++;
-		
-		while(*dataPtr >= '0' && *dataPtr <= '9')		//判断是否是下发的命令控制数据
-		{
-			numBuf[num++] = *dataPtr++;
-		}
-		numBuf[num] = 0;
-		
-		num = atoi((const char *)numBuf);				//转为数值形式
-	}
+	
 
 	if(type == MQTT_PKT_CMD || type == MQTT_PKT_PUBLISH)
 	{
